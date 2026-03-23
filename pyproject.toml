@@ -1,6 +1,6 @@
 [project]
 name = "ha-config-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for Home Assistant config management (integrations, config flows, Lovelace dashboards)"
 readme = "README.md"
 license = "MIT"
@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 ha-config = "ha_config_mcp.cli:cli"
+ha-config-mcp = "ha_config_mcp.cli:cli"
 
 [build-system]
 requires = ["hatchling"]
