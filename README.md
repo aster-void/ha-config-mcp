@@ -30,6 +30,8 @@ export HA_TOKEN="your-token"
 
 ## CLI Usage
 
+The command is available as both `ha-config` and `ha-config-mcp`.
+
 ```bash
 # List integrations
 ha-config entries list
