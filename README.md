@@ -2,6 +2,10 @@
 
 MCP server for Home Assistant configuration management via WebSocket API.
 
+> **Note:** This project is fully developed and maintained by Claude (Anthropic).
+> Don't expect it to work out of the box, though it probably will.
+> Don't expect it to be well-optimized and well-maintained.
+
 ## Features
 
 - **Config Entries** — list, get, update, delete integrations
@@ -17,10 +21,26 @@ export HA_TOKEN="your-long-lived-access-token"
 # Or place it in ~/.config/ha-assist-token
 
 # Run with nix
-nix run github:s-ashigane/ha-config-mcp
+nix run github:aster-void/ha-config-mcp
+# or install it to system (user-wide)
+nix profile add github:aster-void/ha-config-mcp
 
-# Or add to Claude Code
-claude mcp add ha-config -- nix run github:s-ashigane/ha-config-mcp
+# add to Claude Code
+claude mcp add ha-config -- nix run github:aster-void/ha-config-mcp
+# or use [mcptools](https://github.com/f/mcptools)
+mcp tools nix run github:aster-void/ha-config-mcp
+# or use [mcp-cli](https://github.com/philschmid/mcp-cli)
+cat > mcp_servers.json << EOF
+{
+  "mcpServers": {
+    "ha-config": {
+      "command": "nix",
+      "args": ["run" "github:aster-void/ha-config-mcp"]
+    }
+  }
+}
+EOF
+mcp-cli info ha-config
 ```
 
 ## Environment Variables
@@ -51,3 +71,5 @@ claude mcp add ha-config -- nix run github:s-ashigane/ha-config-mcp
 - `lovelace_dashboards_list()` — List all dashboards
 - `lovelace_config_get(url_path?)` — Get full dashboard config
 - `lovelace_config_save(config, url_path?)` — Save full dashboard config
+
+## Flags
