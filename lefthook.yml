@@ -1,0 +1,5 @@
+pre-commit:
+  commands:
+    uv-lock-check:
+      run: uv lock --check
+      fail_text: "uv.lock is out of date. Run 'uv lock' to update."
