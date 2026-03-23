@@ -5,9 +5,11 @@ import os
 from contextlib import asynccontextmanager
 
 import websockets
+import yaml
 from mcp.server.fastmcp import FastMCP
 
 HA_URL = os.environ.get("HA_URL", "ws://localhost:8123/api/websocket")
+HA_OUTPUT = os.environ.get("HA_OUTPUT", "yaml")  # "yaml" or "json"
 HA_TOKEN = os.environ.get("HA_TOKEN", "")
 
 mcp = FastMCP(
@@ -52,6 +54,12 @@ def _read_token_file() -> str:
         raise RuntimeError(f"No HA_TOKEN env var and {path} not found")
 
 
+def _fmt(data) -> str:
+    if HA_OUTPUT == "json":
+        return json.dumps(data, ensure_ascii=False, indent=2)
+    return yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
 async def _send(ws, msg_type: str, **kwargs) -> dict:
     mid = _next_id()
     payload = {"id": mid, "type": msg_type, **kwargs}
@@ -75,7 +83,7 @@ async def config_entries_list(domain: str = "") -> str:
         if domain:
             kwargs["domain"] = domain
         result = await _send(ws, "config_entries/get", **kwargs)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 @mcp.tool()
@@ -86,7 +94,7 @@ async def config_entries_get(entry_id: str) -> str:
         for entry in result:
             if entry.get("entry_id") == entry_id:
                 return json.dumps(entry, ensure_ascii=False, indent=2)
-        return json.dumps({"error": "not found"})
+        return _fmt({"error": "not found"})
 
 
 @mcp.tool()
@@ -94,7 +102,7 @@ async def config_entries_delete(entry_id: str) -> str:
     """Delete an integration (config entry) by ID."""
     async with _ha_ws() as ws:
         result = await _send(ws, "config_entries/delete", entry_id=entry_id)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 @mcp.tool()
@@ -111,7 +119,7 @@ async def config_entries_update(
         if pref_disable_polling is not None:
             kwargs["pref_disable_polling"] = pref_disable_polling
         result = await _send(ws, "config_entries/update", **kwargs)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 # --- Config Flow (add new integration) ---
@@ -122,7 +130,7 @@ async def config_flow_start(domain: str) -> str:
     """Start a config flow to add a new integration. Returns the first step with data_schema describing required fields."""
     async with _ha_ws() as ws:
         result = await _send(ws, "config_entries/flow", handler=[domain, None])
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 @mcp.tool()
@@ -131,7 +139,7 @@ async def config_flow_step(flow_id: str, user_input: str = "{}") -> str:
     data = json.loads(user_input)
     async with _ha_ws() as ws:
         result = await _send(ws, "config_entries/flow", flow_id=flow_id, user_input=data)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 @mcp.tool()
@@ -139,7 +147,7 @@ async def config_flow_abort(flow_id: str) -> str:
     """Abort an in-progress config flow."""
     async with _ha_ws() as ws:
         result = await _send(ws, "config_entries/flow/abort", flow_id=flow_id)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 # --- Options Flow (edit existing integration settings) ---
@@ -150,7 +158,7 @@ async def options_flow_start(entry_id: str) -> str:
     """Start an options flow to change settings of an existing integration. Returns the first step with data_schema."""
     async with _ha_ws() as ws:
         result = await _send(ws, "config_entries/options/flow", handler=entry_id)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 @mcp.tool()
@@ -159,7 +167,7 @@ async def options_flow_step(flow_id: str, user_input: str = "{}") -> str:
     data = json.loads(user_input)
     async with _ha_ws() as ws:
         result = await _send(ws, "config_entries/options/flow", flow_id=flow_id, user_input=data)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 # --- Lovelace Dashboards ---
@@ -170,7 +178,7 @@ async def lovelace_dashboards_list() -> str:
     """List all Lovelace dashboards."""
     async with _ha_ws() as ws:
         result = await _send(ws, "lovelace/dashboards/list")
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 @mcp.tool()
@@ -181,7 +189,7 @@ async def lovelace_config_get(url_path: str = "") -> str:
         if url_path:
             kwargs["url_path"] = url_path
         result = await _send(ws, "lovelace/config", **kwargs)
-        return json.dumps(result, ensure_ascii=False, indent=2)
+        return _fmt(result)
 
 
 @mcp.tool()
@@ -193,7 +201,7 @@ async def lovelace_config_save(config: str, url_path: str = "") -> str:
         if url_path:
             kwargs["url_path"] = url_path
         result = await _send(ws, "lovelace/config/save", **kwargs)
-        return json.dumps(result if result else {"success": True}, ensure_ascii=False, indent=2)
+        return _fmt(result if result else {"success": True})
 
 
 def main():
