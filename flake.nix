@@ -44,5 +44,12 @@
       in {
         default = pythonSet.mkVirtualEnv "ha-config-env" workspace.deps.default;
       });
+
+      apps = forAllSystems ({ pkgs, system }: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/ha-config";
+        };
+      });
     };
 }
